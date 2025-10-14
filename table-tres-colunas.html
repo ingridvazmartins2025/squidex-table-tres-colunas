@@ -1,0 +1,129 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Custom Table Editor</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <!-- SDK oficial do Squidex -->
+  <script src="https://cloud.squidex.io/scripts/editor-sdk.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 10px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+    th { background: #f4f4f4; }
+    button { margin-right: 5px; }
+  </style>
+</head>
+<body>
+  <h3>Editor de Tabela</h3>
+  <div>
+    <button id="addRow">Adicionar linha</button>
+    <button id="clearAll">Limpar tudo</button>
+  </div>
+  <div id="tableContainer"></div>
+
+  <script>
+    console.log('Inicializando editor...');
+
+    // Inicializa o campo Squidex (SDK)
+    let field;
+    try {
+      field = new SquidexFormField();
+    } catch (err) {
+      console.error('Erro ao inicializar SquidexFormField:', err);
+    }
+
+    let currentData = [];
+
+    const container = document.getElementById('tableContainer');
+    const addBtn = document.getElementById('addRow');
+    const clearBtn = document.getElementById('clearAll');
+
+    function renderTable() {
+      container.innerHTML = '';
+      const table = document.createElement('table');
+
+      const thead = document.createElement('thead');
+      thead.innerHTML = `
+        <tr>
+          <th>Coluna A</th>
+          <th>Coluna B</th>
+          <th>Coluna C</th>
+          <th>Ações</th>
+        </tr>`;
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      currentData.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="text" value="${row.a || ''}" data-row="${idx}" data-col="a"></td>
+          <td><input type="text" value="${row.b || ''}" data-row="${idx}" data-col="b"></td>
+          <td><input type="text" value="${row.c || ''}" data-row="${idx}" data-col="c"></td>
+          <td><button class="removeRow" data-idx="${idx}">Remover</button></td>`;
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      // Adiciona listeners após renderizar
+      document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', e => {
+          const row = e.target.getAttribute('data-row');
+          const col = e.target.getAttribute('data-col');
+          currentData[row][col] = e.target.value;
+          pushToSquidex();
+        });
+      });
+
+      document.querySelectorAll('.removeRow').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const idx = parseInt(e.target.getAttribute('data-idx'));
+          currentData.splice(idx, 1);
+          renderTable();
+          pushToSquidex();
+        });
+      });
+    }
+
+    function pushToSquidex() {
+      if (field) {
+        field.valueChanged(currentData);
+        console.log('Enviado para Squidex:', currentData);
+      } else {
+        console.warn('field não inicializado ainda.');
+      }
+    }
+
+    addBtn.addEventListener('click', () => {
+      currentData.push({ a: '', b: '', c: '' });
+      renderTable();
+      pushToSquidex();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      currentData = [];
+      renderTable();
+      pushToSquidex();
+    });
+
+    // Integração com Squidex
+    if (field) {
+      field.onInit(ctx => console.log('Squidex init', ctx));
+      field.onValueChanged(value => {
+        currentData = Array.isArray(value) ? value : [];
+        console.log('Valor carregado do Squidex:', currentData);
+        renderTable();
+      });
+      field.onDisabled(disabled => {
+        [addBtn, clearBtn].forEach(b => b.disabled = disabled);
+        console.log('Editor disabled:', disabled);
+      });
+    }
+
+    // Render inicial (caso local)
+    renderTable();
+  </script>
+</body>
+</html>
