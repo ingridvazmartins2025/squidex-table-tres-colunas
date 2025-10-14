@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -9,127 +9,174 @@
     body {
       font-family: system-ui, sans-serif;
       background: #f9fafb;
-      margin: 1rem;
+      margin: 20px;
     }
+
     h3 {
-      color: #1e293b;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      background: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    thead {
-      background: #e5f0ff;
       color: #1e3a8a;
+      margin-bottom: 10px;
     }
-    th, td {
-      border: 1px solid #d1d5db;
-      padding: 6px 8px;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    thead {
+      background-color: #e8f0ff;
+      color: #1e3a8a;
       text-align: left;
     }
-    th input {
-      border: none;
-      background: transparent;
-      font-weight: bold;
-      width: 100%;
-      color: #1e3a8a;
+
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 8px;
     }
-    th input:focus {
-      outline: none;
-      background: #e0ebff;
-    }
+
     th {
+      position: relative;
       cursor: pointer;
       user-select: none;
     }
-    th.sort-asc::after { content: " 🔼"; }
-    th.sort-desc::after { content: " 🔽"; }
-    tr:nth-child(even) { background: #f9fafb; }
+
+    th input {
+      width: 90%;
+      font-weight: bold;
+      border: none;
+      background: transparent;
+      color: #1e3a8a;
+    }
+
+    th input:focus {
+      outline: none;
+      background-color: #dbeafe;
+    }
+
+    th.sort-asc::after {
+      content: " 🔼";
+    }
+
+    th.sort-desc::after {
+      content: " 🔽";
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    td input {
+      width: 100%;
+      border: none;
+      padding: 4px;
+      background: transparent;
+    }
+
+    td input:focus {
+      outline: none;
+      background-color: #eef2ff;
+    }
+
     button {
-      padding: 6px 12px;
-      margin: 6px 4px;
       background-color: #2563eb;
       color: white;
       border: none;
       border-radius: 4px;
+      padding: 6px 12px;
+      margin: 6px 4px;
       cursor: pointer;
     }
-    button:hover { background-color: #1d4ed8; }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    .controls {
+      margin-bottom: 10px;
+    }
   </style>
 </head>
+
 <body>
-  <h3>Tabela Personalizável (Squidex)</h3>
-  <div>
+  <h3>Tabela Interativa (Squidex)</h3>
+  <div class="controls">
+    <button id="addColumn">Adicionar Coluna</button>
     <button id="addRow">Adicionar Linha</button>
-    <button id="clearAll">Limpar Tudo</button>
+    <button id="clearTable">Limpar Tudo</button>
   </div>
   <div id="tableContainer"></div>
 
   <script>
     let field;
-    try { field = new SquidexFormField(); } catch(e) { console.warn("SDK não encontrado, modo offline"); }
+    try { field = new SquidexFormField(); } catch (e) { console.log("Modo local, Squidex SDK não detectado."); }
 
     let tableData = {
       headers: ["Header 1", "Header 2", "Header 3", "Header 4", "Header 5"],
       rows: [
-        { c1: "10", c2: "Thu Jan 25 2024 19:36:57 GMT+0000 (Hora padrão da Europa Ocidental)", c3: "98be2ca9-9dc2-4a58-bb1f-4403c5962389", c4: "b4f62b2f-dc3a-420a-bdcb-688f47513980", c5: "810e5607-e4ab-4ffc-aad0-3b02ec0674cb" },
-        { c1: "0", c2: "Mon Jan 29 2024 17:04:30 GMT+0000 (Hora padrão da Europa Ocidental)", c3: "2a7d90e8-75d7-4717-a748-b872abbd5e6b", c4: "80ed6bcb-3e28-4f18-b20e-6f8b2c1aa603", c5: "ae4dd5d9-4329-489b-998e-2ea175f3bb21" },
-        { c1: "18", c2: "Sat Jan 27 2024 09:55:14 GMT+0000 (Hora padrão da Europa Ocidental)", c3: "149548dd-3ed1-4ef9-b588-17a413f60a0f", c4: "e793bc38-9162-4584-b130-d9115163cac4", c5: "3911a0a3-c3ab-4425-a1e6-027544a4dabc" }
+        { c1: "10", c2: "Thu Jan 25 2024 19:36:57 GMT+0000", c3: "98be2ca9-9dc2-4a58-bb1f-4403c5962389", c4: "b4f62b2f-dc3a-420a-bdcb-688f47513980", c5: "810e5607-e4ab-4ffc-aad0-3b02ec0674cb" },
+        { c1: "0", c2: "Mon Jan 29 2024 17:04:30 GMT+0000", c3: "2a7d90e8-75d7-4717-a748-b872abbd5e6b", c4: "80ed6bcb-3e28-4f18-b20e-6f8b2c1aa603", c5: "ae4dd5d9-4329-489b-998e-2ea175f3bb21" },
+        { c1: "18", c2: "Sat Jan 27 2024 09:55:14 GMT+0000", c3: "149548dd-3ed1-4ef9-b588-17a413f60a0f", c4: "e793bc38-9162-4584-b130-d9115163cac4", c5: "3911a0a3-c3ab-4425-a1e6-027544a4dabc" }
       ]
     };
 
-    const container = document.getElementById('tableContainer');
-    const addBtn = document.getElementById('addRow');
-    const clearBtn = document.getElementById('clearAll');
+    const container = document.getElementById("tableContainer");
+    const addRowBtn = document.getElementById("addRow");
+    const addColumnBtn = document.getElementById("addColumn");
+    const clearBtn = document.getElementById("clearTable");
+
     let sortState = { index: null, direction: null };
 
     function renderTable() {
       container.innerHTML = "";
-      const table = document.createElement('table');
-      const thead = document.createElement('thead');
-      const headerRow = document.createElement('tr');
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
 
-      tableData.headers.forEach((h, i) => {
-        const th = document.createElement('th');
-        const input = document.createElement('input');
-        input.value = h;
+      tableData.headers.forEach((header, i) => {
+        const th = document.createElement("th");
+        const input = document.createElement("input");
+        input.value = header;
         input.dataset.index = i;
-        input.addEventListener('input', e => {
+        input.addEventListener("input", e => {
           const idx = e.target.dataset.index;
           tableData.headers[idx] = e.target.value;
           pushToSquidex();
         });
+
         if (sortState.index === i) {
-          th.classList.add(sortState.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+          th.classList.add(sortState.direction === "asc" ? "sort-asc" : "sort-desc");
         }
+
         th.appendChild(input);
-        th.addEventListener('click', () => sortTable(i));
+        th.addEventListener("click", () => sortTable(i));
         headerRow.appendChild(th);
       });
 
       thead.appendChild(headerRow);
       table.appendChild(thead);
 
-      const tbody = document.createElement('tbody');
-      tableData.rows.forEach((row, idx) => {
-        const tr = document.createElement('tr');
-        for (let i = 1; i <= tableData.headers.length; i++) {
-          const td = document.createElement('td');
-          const input = document.createElement('input');
-          input.type = "text";
-          input.value = row[`c${i}`] || "";
-          input.dataset.row = idx;
-          input.dataset.col = `c${i}`;
-          input.addEventListener('input', e => {
+      const tbody = document.createElement("tbody");
+
+      tableData.rows.forEach((row, rIndex) => {
+        const tr = document.createElement("tr");
+        tableData.headers.forEach((_, cIndex) => {
+          const td = document.createElement("td");
+          const input = document.createElement("input");
+          const key = `c${cIndex + 1}`;
+          input.value = row[key] || "";
+          input.dataset.row = rIndex;
+          input.dataset.col = key;
+          input.addEventListener("input", e => {
             const { row, col } = e.target.dataset;
             tableData.rows[row][col] = e.target.value;
             pushToSquidex();
           });
           td.appendChild(input);
           tr.appendChild(td);
-        }
+        });
         tbody.appendChild(tr);
       });
 
@@ -138,15 +185,15 @@
     }
 
     function sortTable(index) {
-      const key = `c${index+1}`;
+      const key = `c${index + 1}`;
       if (sortState.index === index) {
-        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+        sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
       } else {
-        sortState = { index, direction: 'asc' };
+        sortState = { index, direction: "asc" };
       }
       tableData.rows.sort((a, b) => {
-        if (a[key] < b[key]) return sortState.direction === 'asc' ? -1 : 1;
-        if (a[key] > b[key]) return sortState.direction === 'asc' ? 1 : -1;
+        if (a[key] < b[key]) return sortState.direction === "asc" ? -1 : 1;
+        if (a[key] > b[key]) return sortState.direction === "asc" ? 1 : -1;
         return 0;
       });
       renderTable();
@@ -156,7 +203,7 @@
       if (field) field.valueChanged(tableData);
     }
 
-    addBtn.addEventListener('click', () => {
+    addRowBtn.addEventListener("click", () => {
       const newRow = {};
       for (let i = 1; i <= tableData.headers.length; i++) newRow[`c${i}`] = "";
       tableData.rows.push(newRow);
@@ -164,7 +211,15 @@
       pushToSquidex();
     });
 
-    clearBtn.addEventListener('click', () => {
+    addColumnBtn.addEventListener("click", () => {
+      const newHeader = `Header ${tableData.headers.length + 1}`;
+      tableData.headers.push(newHeader);
+      tableData.rows.forEach(r => (r[`c${tableData.headers.length}`] = ""));
+      renderTable();
+      pushToSquidex();
+    });
+
+    clearBtn.addEventListener("click", () => {
       tableData.rows = [];
       renderTable();
       pushToSquidex();
@@ -178,7 +233,8 @@
         }
       });
       field.onDisabled(disabled => {
-        addBtn.disabled = disabled;
+        addRowBtn.disabled = disabled;
+        addColumnBtn.disabled = disabled;
         clearBtn.disabled = disabled;
       });
     }
