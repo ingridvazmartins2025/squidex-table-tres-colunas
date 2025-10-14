@@ -1,103 +1,154 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Custom Table Editor</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <!-- SDK oficial do Squidex -->
-  <script src="https://cloud.squidex.io/scripts/editor-sdk.js"></script>
+  <title>Squidex Table Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="./editor-sdk.js"></script>
   <style>
-    body { font-family: sans-serif; margin: 10px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-    th { background: #f4f4f4; }
-    button { margin-right: 5px; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f9fafb;
+      margin: 1rem;
+    }
+    h3 {
+      margin-bottom: 0.5rem;
+      color: #1e293b;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    thead {
+      background: #e5f0ff;
+      color: #1e3a8a;
+    }
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    th {
+      cursor: pointer;
+      user-select: none;
+    }
+    th.sort-asc::after {
+      content: " 🔼";
+    }
+    th.sort-desc::after {
+      content: " 🔽";
+    }
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+    button {
+      padding: 6px 12px;
+      margin: 6px 4px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
   </style>
 </head>
 <body>
-  <h3>Editor de Tabela</h3>
+  <h3>Tabela Customizada Squidex</h3>
   <div>
-    <button id="addRow">Adicionar linha</button>
-    <button id="clearAll">Limpar tudo</button>
+    <button id="addRow">Adicionar Linha</button>
+    <button id="clearAll">Limpar Tudo</button>
   </div>
+
   <div id="tableContainer"></div>
 
   <script>
-    console.log('Inicializando editor...');
-
-    // Inicializa o campo Squidex (SDK)
+    // Inicialização do SDK do Squidex
     let field;
-    try {
-      field = new SquidexFormField();
-    } catch (err) {
-      console.error('Erro ao inicializar SquidexFormField:', err);
-    }
+    try { field = new SquidexFormField(); } catch(e) { console.warn("SDK não encontrado, modo offline"); }
 
-    let currentData = [];
+    const headers = ["Header 1", "Header 2", "Header 3", "Header 4", "Header 5"];
+    let currentData = [
+      { c1: 10, c2: "Thu Jan 25 2024 19:36:57 GMT+0000 (Hora padrão da Europa Ocidental)", c3: "98be2ca9-9dc2-4a58-bb1f-4403c5962389", c4: "b4f62b2f-dc3a-420a-bdcb-688f47513980", c5: "810e5607-e4ab-4ffc-aad0-3b02ec0674cb" },
+      { c1: 0, c2: "Mon Jan 29 2024 17:04:30 GMT+0000 (Hora padrão da Europa Ocidental)", c3: "2a7d90e8-75d7-4717-a748-b872abbd5e6b", c4: "80ed6bcb-3e28-4f18-b20e-6f8b2c1aa603", c5: "ae4dd5d9-4329-489b-998e-2ea175f3bb21" },
+      { c1: 18, c2: "Sat Jan 27 2024 09:55:14 GMT+0000 (Hora padrão da Europa Ocidental)", c3: "149548dd-3ed1-4ef9-b588-17a413f60a0f", c4: "e793bc38-9162-4584-b130-d9115163cac4", c5: "3911a0a3-c3ab-4425-a1e6-027544a4dabc" }
+    ];
 
     const container = document.getElementById('tableContainer');
     const addBtn = document.getElementById('addRow');
     const clearBtn = document.getElementById('clearAll');
+    let sortState = { index: null, direction: null };
 
     function renderTable() {
-      container.innerHTML = '';
       const table = document.createElement('table');
-
       const thead = document.createElement('thead');
-      thead.innerHTML = `
-        <tr>
-          <th>Coluna A</th>
-          <th>Coluna B</th>
-          <th>Coluna C</th>
-          <th>Ações</th>
-        </tr>`;
+      const headerRow = document.createElement('tr');
+
+      headers.forEach((h, i) => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        if (sortState.index === i) {
+          th.classList.add(sortState.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+        th.addEventListener('click', () => sortTable(i));
+        headerRow.appendChild(th);
+      });
+
+      thead.appendChild(headerRow);
       table.appendChild(thead);
 
       const tbody = document.createElement('tbody');
       currentData.forEach((row, idx) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><input type="text" value="${row.a || ''}" data-row="${idx}" data-col="a"></td>
-          <td><input type="text" value="${row.b || ''}" data-row="${idx}" data-col="b"></td>
-          <td><input type="text" value="${row.c || ''}" data-row="${idx}" data-col="c"></td>
-          <td><button class="removeRow" data-idx="${idx}">Remover</button></td>`;
+          <td><input type="text" data-idx="${idx}" data-col="c1" value="${row.c1 || ''}"></td>
+          <td><input type="text" data-idx="${idx}" data-col="c2" value="${row.c2 || ''}"></td>
+          <td><input type="text" data-idx="${idx}" data-col="c3" value="${row.c3 || ''}"></td>
+          <td><input type="text" data-idx="${idx}" data-col="c4" value="${row.c4 || ''}"></td>
+          <td><input type="text" data-idx="${idx}" data-col="c5" value="${row.c5 || ''}"></td>
+        `;
         tbody.appendChild(tr);
       });
 
       table.appendChild(tbody);
+      container.innerHTML = '';
       container.appendChild(table);
 
-      // Adiciona listeners após renderizar
-      document.querySelectorAll('input').forEach(input => {
+      // listeners de input
+      container.querySelectorAll('input').forEach(input => {
         input.addEventListener('input', e => {
-          const row = e.target.getAttribute('data-row');
-          const col = e.target.getAttribute('data-col');
-          currentData[row][col] = e.target.value;
+          const { idx, col } = e.target.dataset;
+          currentData[idx][col] = e.target.value;
           pushToSquidex();
         });
       });
+    }
 
-      document.querySelectorAll('.removeRow').forEach(btn => {
-        btn.addEventListener('click', e => {
-          const idx = parseInt(e.target.getAttribute('data-idx'));
-          currentData.splice(idx, 1);
-          renderTable();
-          pushToSquidex();
-        });
+    function sortTable(index) {
+      const key = ['c1','c2','c3','c4','c5'][index];
+      if (sortState.index === index) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState = { index, direction: 'asc' };
+      }
+      currentData.sort((a, b) => {
+        if (a[key] < b[key]) return sortState.direction === 'asc' ? -1 : 1;
+        if (a[key] > b[key]) return sortState.direction === 'asc' ? 1 : -1;
+        return 0;
       });
+      renderTable();
     }
 
     function pushToSquidex() {
-      if (field) {
-        field.valueChanged(currentData);
-        console.log('Enviado para Squidex:', currentData);
-      } else {
-        console.warn('field não inicializado ainda.');
-      }
+      if (field) field.valueChanged(currentData);
     }
 
     addBtn.addEventListener('click', () => {
-      currentData.push({ a: '', b: '', c: '' });
+      currentData.push({ c1: '', c2: '', c3: '', c4: '', c5: '' });
       renderTable();
       pushToSquidex();
     });
@@ -108,21 +159,18 @@
       pushToSquidex();
     });
 
-    // Integração com Squidex
+    // integração Squidex
     if (field) {
-      field.onInit(ctx => console.log('Squidex init', ctx));
       field.onValueChanged(value => {
-        currentData = Array.isArray(value) ? value : [];
-        console.log('Valor carregado do Squidex:', currentData);
+        currentData = Array.isArray(value) ? value : currentData;
         renderTable();
       });
       field.onDisabled(disabled => {
-        [addBtn, clearBtn].forEach(b => b.disabled = disabled);
-        console.log('Editor disabled:', disabled);
+        addBtn.disabled = disabled;
+        clearBtn.disabled = disabled;
       });
     }
 
-    // Render inicial (caso local)
     renderTable();
   </script>
 </body>
