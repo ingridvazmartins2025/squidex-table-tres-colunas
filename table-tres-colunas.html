@@ -2,19 +2,22 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Tabela Interativa Squidex</title>
+  <title>Editor de Tabela (Squidex)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="./editor-sdk.js"></script>
+
+  <!-- 🔹 IMPORTANTE: use o SDK hospedado no mesmo domínio do Squidex -->
+  <script src="https://cloud.squidex.io/scripts/editor-sdk.js"></script>
+
   <style>
     body {
       font-family: "Inter", sans-serif;
-      margin: 20px;
-      background-color: #f8fafc;
+      margin: 16px;
+      background-color: #f9fafb;
     }
 
     h2 {
       color: #1e3a8a;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .controls {
@@ -27,7 +30,7 @@
       border: none;
       padding: 6px 12px;
       border-radius: 6px;
-      margin-right: 6px;
+      margin-right: 8px;
       cursor: pointer;
     }
 
@@ -38,70 +41,42 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      border: 1px solid #d1d5db;
-      background-color: white;
+      background: white;
       border-radius: 8px;
       overflow: hidden;
     }
 
-    thead {
-      background-color: #e8f0ff;
-      color: #1e3a8a;
-    }
-
     th, td {
-      border: 1px solid #d1d5db;
+      border: 1px solid #e5e7eb;
       padding: 8px;
       text-align: left;
     }
 
     th {
-      font-weight: 600;
-      cursor: pointer;
-      position: relative;
+      background-color: #eff6ff;
+      color: #1e40af;
     }
 
-    th input {
-      width: 95%;
-      border: none;
-      background: transparent;
-      font-weight: 600;
-      color: #1e3a8a;
-      cursor: text;
-    }
-
-    th input:focus {
-      outline: none;
-      background-color: #dbeafe;
-    }
-
-    td input {
+    input {
       width: 100%;
       border: none;
       background: transparent;
-      color: #111827;
+      padding: 4px;
     }
 
-    td input:focus {
+    input:focus {
       outline: none;
-      background-color: #eef2ff;
+      background: #e0e7ff;
     }
 
     tr:nth-child(even) {
       background-color: #f9fafb;
     }
-
-    th.sort-asc::after {
-      content: " ⬆️";
-    }
-
-    th.sort-desc::after {
-      content: " ⬇️";
-    }
   </style>
 </head>
 <body>
-  <h2>Tabela Interativa (Squidex)</h2>
+  <h2>Editor de Tabela</h2>
+
   <div class="controls">
     <button id="addColumn">Adicionar Coluna</button>
     <button id="addRow">Adicionar Linha</button>
@@ -112,70 +87,63 @@
 
   <script>
     let field;
-    try { field = new SquidexFormField(); } catch (e) { console.warn("Rodando fora do Squidex"); }
+    try {
+      field = new SquidexFormField();
+    } catch (err) {
+      console.log("Executando fora do Squidex (modo local).");
+    }
 
-    let tableData = {
-      headers: ["ID", "Nome", "E-mail", "Departamento", "Data de Criação"],
-      rows: [
-        { c1: "101", c2: "Ana Silva", c3: "ana.silva@empresa.com", c4: "Financeiro", c5: "2024-05-12" },
-        { c1: "102", c2: "Bruno Costa", c3: "bruno.costa@empresa.com", c4: "Marketing", c5: "2024-06-03" },
-        { c1: "103", c2: "Carla Souza", c3: "carla.souza@empresa.com", c4: "TI", c5: "2024-06-25" },
-        { c1: "104", c2: "Diego Lima", c3: "diego.lima@empresa.com", c4: "Comercial", c5: "2024-07-15" },
-      ]
-    };
-
+    let tableData = { headers: [], rows: [] };
     const container = document.getElementById("tableContainer");
-    const addRowBtn = document.getElementById("addRow");
-    const addColBtn = document.getElementById("addColumn");
-    const clearBtn = document.getElementById("clearTable");
 
-    let sortState = { index: null, direction: null };
-
+    // ===============================
+    // RENDERIZA A TABELA
+    // ===============================
     function renderTable() {
       container.innerHTML = "";
+
       const table = document.createElement("table");
       const thead = document.createElement("thead");
       const tbody = document.createElement("tbody");
       const headerRow = document.createElement("tr");
 
-      tableData.headers.forEach((header, i) => {
+      // 🔹 Cabeçalhos
+      tableData.headers.forEach((header, index) => {
         const th = document.createElement("th");
         const input = document.createElement("input");
         input.value = header;
-        input.dataset.index = i;
+        input.dataset.index = index;
 
-        // impedir que o click para editar dispare o sort
-        input.addEventListener("click", e => e.stopPropagation());
-        input.addEventListener("input", e => {
+        input.addEventListener("input", (e) => {
           tableData.headers[e.target.dataset.index] = e.target.value;
           pushToSquidex();
         });
 
-        if (sortState.index === i) {
-          th.classList.add(sortState.direction === "asc" ? "sort-asc" : "sort-desc");
-        }
-
         th.appendChild(input);
-        th.addEventListener("click", () => sortTable(i));
         headerRow.appendChild(th);
       });
 
-      thead.appendChild(headerRow);
-      table.appendChild(thead);
+      if (tableData.headers.length > 0) {
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+      }
 
-      tableData.rows.forEach((row, rIndex) => {
+      // 🔹 Linhas
+      tableData.rows.forEach((row, rowIndex) => {
         const tr = document.createElement("tr");
-        tableData.headers.forEach((_, cIndex) => {
+        tableData.headers.forEach((_, colIndex) => {
           const td = document.createElement("td");
           const input = document.createElement("input");
-          const key = `c${cIndex + 1}`;
+          const key = `c${colIndex + 1}`;
           input.value = row[key] || "";
-          input.dataset.row = rIndex;
+          input.dataset.row = rowIndex;
           input.dataset.col = key;
-          input.addEventListener("input", e => {
+
+          input.addEventListener("input", (e) => {
             tableData.rows[e.target.dataset.row][e.target.dataset.col] = e.target.value;
             pushToSquidex();
           });
+
           td.appendChild(input);
           tr.appendChild(td);
         });
@@ -186,26 +154,29 @@
       container.appendChild(table);
     }
 
-    function sortTable(index) {
-      const key = `c${index + 1}`;
-      if (sortState.index === index) {
-        sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
-      } else {
-        sortState = { index, direction: "asc" };
-      }
-      tableData.rows.sort((a, b) => {
-        if (a[key] < b[key]) return sortState.direction === "asc" ? -1 : 1;
-        if (a[key] > b[key]) return sortState.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-      renderTable();
-    }
-
+    // ===============================
+    // SALVAR NO SQUIDEX
+    // ===============================
     function pushToSquidex() {
       if (field) field.valueChanged(tableData);
     }
 
-    addRowBtn.addEventListener("click", () => {
+    // ===============================
+    // EVENTOS DOS BOTÕES
+    // ===============================
+    document.getElementById("addColumn").addEventListener("click", () => {
+      const newHeader = `Coluna ${tableData.headers.length + 1}`;
+      tableData.headers.push(newHeader);
+      tableData.rows.forEach((r) => (r[`c${tableData.headers.length}`] = ""));
+      renderTable();
+      pushToSquidex();
+    });
+
+    document.getElementById("addRow").addEventListener("click", () => {
+      if (tableData.headers.length === 0) {
+        alert("Adicione pelo menos uma coluna antes de criar linhas!");
+        return;
+      }
       const newRow = {};
       for (let i = 1; i <= tableData.headers.length; i++) newRow[`c${i}`] = "";
       tableData.rows.push(newRow);
@@ -213,35 +184,33 @@
       pushToSquidex();
     });
 
-    addColBtn.addEventListener("click", () => {
-      tableData.headers.push(`Nova Coluna ${tableData.headers.length + 1}`);
-      tableData.rows.forEach(r => (r[`c${tableData.headers.length}`] = ""));
-      renderTable();
-      pushToSquidex();
-    });
-
-    clearBtn.addEventListener("click", () => {
-      if (confirm("Deseja limpar todos os dados da tabela?")) {
-        tableData.rows = [];
+    document.getElementById("clearTable").addEventListener("click", () => {
+      if (confirm("Deseja limpar toda a tabela?")) {
+        tableData = { headers: [], rows: [] };
         renderTable();
         pushToSquidex();
       }
     });
 
+    // ===============================
+    // INTEGRAÇÃO COM SQUIDEX
+    // ===============================
     if (field) {
-      field.onValueChanged(value => {
+      field.onValueChanged((value) => {
         if (value && value.headers && value.rows) {
           tableData = value;
-          renderTable();
         }
+        renderTable();
       });
-      field.onDisabled(disabled => {
-        addRowBtn.disabled = disabled;
-        addColBtn.disabled = disabled;
-        clearBtn.disabled = disabled;
+
+      field.onDisabled((disabled) => {
+        document.getElementById("addColumn").disabled = disabled;
+        document.getElementById("addRow").disabled = disabled;
+        document.getElementById("clearTable").disabled = disabled;
       });
     }
 
+    // Render inicial
     renderTable();
   </script>
 </body>
