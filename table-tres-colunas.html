@@ -56,18 +56,18 @@
     }
 
     th {
-      position: relative;
-      cursor: pointer;
-      user-select: none;
       font-weight: 600;
+      cursor: pointer;
+      position: relative;
     }
 
     th input {
-      width: 90%;
+      width: 95%;
       border: none;
       background: transparent;
       font-weight: 600;
       color: #1e3a8a;
+      cursor: text;
     }
 
     th input:focus {
@@ -115,11 +115,12 @@
     try { field = new SquidexFormField(); } catch (e) { console.warn("Rodando fora do Squidex"); }
 
     let tableData = {
-      headers: ["Header 1", "Header 2", "Header 3", "Header 4", "Header 5"],
+      headers: ["ID", "Nome", "E-mail", "Departamento", "Data de Criação"],
       rows: [
-        { c1: "0", c2: "Mon Jan 29 2024 17:04:30 GMT+0000", c3: "2a7d90e8-75d7-4717-a748-b872abbd5e6b", c4: "80ed6bcb-3e28-4f18-b20e-6f8b2c1aa603", c5: "ae4dd5d9-4329-489b-998e-2ea175f3bb21" },
-        { c1: "16", c2: "Wed Jan 17 2024 15:43:39 GMT+0000", c3: "eacd860b-15d1-4820-9d21-23791bb2436f", c4: "626a6d5e-8afa-4bf0-a54b-526045fd9cf0", c5: "a353b57b-e08c-4ccd-9453-909cbca57a8a" },
-        { c1: "5", c2: "Thu Jan 11 2024 11:16:40 GMT+0000", c3: "50834fa9-7fb8-4381-aaea-ba321a29887e", c4: "6278cedd-89fe-4790-82d5-77d98bb6bde9", c5: "5753d747-4e64-4c62-9117-0a7ead999dc4" },
+        { c1: "101", c2: "Ana Silva", c3: "ana.silva@empresa.com", c4: "Financeiro", c5: "2024-05-12" },
+        { c1: "102", c2: "Bruno Costa", c3: "bruno.costa@empresa.com", c4: "Marketing", c5: "2024-06-03" },
+        { c1: "103", c2: "Carla Souza", c3: "carla.souza@empresa.com", c4: "TI", c5: "2024-06-25" },
+        { c1: "104", c2: "Diego Lima", c3: "diego.lima@empresa.com", c4: "Comercial", c5: "2024-07-15" },
       ]
     };
 
@@ -142,6 +143,9 @@
         const input = document.createElement("input");
         input.value = header;
         input.dataset.index = i;
+
+        // impedir que o click para editar dispare o sort
+        input.addEventListener("click", e => e.stopPropagation());
         input.addEventListener("input", e => {
           tableData.headers[e.target.dataset.index] = e.target.value;
           pushToSquidex();
@@ -210,16 +214,18 @@
     });
 
     addColBtn.addEventListener("click", () => {
-      tableData.headers.push(`Header ${tableData.headers.length + 1}`);
+      tableData.headers.push(`Nova Coluna ${tableData.headers.length + 1}`);
       tableData.rows.forEach(r => (r[`c${tableData.headers.length}`] = ""));
       renderTable();
       pushToSquidex();
     });
 
     clearBtn.addEventListener("click", () => {
-      tableData.rows = [];
-      renderTable();
-      pushToSquidex();
+      if (confirm("Deseja limpar todos os dados da tabela?")) {
+        tableData.rows = [];
+        renderTable();
+        pushToSquidex();
+      }
     });
 
     if (field) {
